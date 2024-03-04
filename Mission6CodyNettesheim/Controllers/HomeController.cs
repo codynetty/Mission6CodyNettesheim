@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Mission6CodyNettesheim.Models;
 using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Mission6CodyNettesheim.Controllers
 {
@@ -23,19 +25,77 @@ namespace Mission6CodyNettesheim.Controllers
             return View();
         }
         [HttpGet]
-        public IActionResult movies()
+        public IActionResult MovieAddition()
         {
-            return View();
+            ViewBag.Category = _movieContext.Categories.ToList();
+
+            return View("MovieAddition", new Additions());
         }
         [HttpPost]
-        public IActionResult movies(Additions response) 
+        public IActionResult MovieAddition(Additions response) 
         {
-            _movieContext.Additions.Add(response);
+            if (ModelState.IsValid)
+            {
+
+                _movieContext.Movies.Add(response);
+                _movieContext.SaveChanges();
+                return View("Confirm", response);
+
+            }
+            else //invalid data
+            {
+                ViewBag.Category = _movieContext.Categories.ToList();
+
+                return View(response);
+            }
+        
+        }
+
+        public IActionResult MovieList()
+        {
+            //linq
+            var movies = _movieContext.Movies.Include("Category").ToList();
+
+            return View(movies);
+        }
+
+        [HttpGet]
+
+        public IActionResult Edit(int id)
+        {
+            var recordToEdit = _movieContext.Movies
+                .Single(x => x.MovieId == id);
+
+            ViewBag.Category = _movieContext.Categories.ToList();
+
+            return View("MovieAddition", recordToEdit);
+        }
+
+        [HttpPost]
+        public IActionResult Edit(Additions updatedInfo)
+        {
+            _movieContext.Update(updatedInfo);
             _movieContext.SaveChanges();
 
-            return View("Confirm");
+            return RedirectToAction("MovieList");
         }
-     
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            var recordToDelete = _movieContext.Movies
+                .Single(x => x.MovieId == id);
+
+            return View(recordToDelete);
+        }
+        [HttpPost]
+        public IActionResult Delete(Additions application)
+        {
+            _movieContext.Movies.Remove(application);
+            _movieContext.SaveChanges();
+
+            return RedirectToAction("MovieList");
+        }
+
 
     }
 }
